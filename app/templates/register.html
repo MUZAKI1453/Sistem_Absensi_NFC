@@ -1,0 +1,190 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Registrasi Kartu{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h4 class="mb-3">Registrasi Kartu NFC</h4>
+
+    <!-- =========================
+         INSTRUKSI REGISTRASI
+    ========================= -->
+    <div class="card border-0 shadow-sm mb-3" style="background:#f8fafc;">
+
+        <div class="card-body">
+
+            <div class="d-flex align-items-start">
+
+                <div class="me-3 fs-3">
+                    📡
+                </div>
+
+                <div>
+
+                    <h6 class="mb-2 fw-bold">
+                        Instruksi Registrasi Kartu
+                    </h6>
+
+                    <ol class="mb-2 ps-3 small text-muted">
+                        <li>Tekan tombol <b>REGISTER</b> pada perangkat absensi</li>
+                        <li>Tempelkan kartu NFC ke alat hingga terbaca</li>
+                        <li>Pastikan UID muncul otomatis di kolom</li>
+                        <li>Isi data siswa lalu klik <b>Simpan</b></li>
+                    </ol>
+
+                    <span class="badge bg-dark">
+                        Mode perangkat harus: REGISTER
+                    </span>
+
+                    <!-- STATUS DEVICE -->
+                    <div class="mt-2 small text-success" id="deviceStatus">
+                        ● Menunggu kartu...
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- FLASH -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div id="flashMessage">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show">
+            {{ message }}
+            <button class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- FORM -->
+    <div class="card shadow-sm">
+
+        <div class="card-body">
+
+            <form method="POST">
+
+                <div class="mb-3">
+                    <label class="form-label">Nama Siswa</label>
+                    <input type="text" name="nama" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">NIS</label>
+                    <input type="text" name="nis" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Kelas</label>
+                    <select name="kelas_id" class="form-control" required>
+                        <option value="">-- Pilih Kelas --</option>
+                        {% for k in kelas %}
+                        <option value="{{ k.id }}">{{ k.nama_kelas }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">UID Kartu</label>
+                    <input type="text"
+                           id="uid"
+                           name="uid"
+                           class="form-control"
+                           readonly
+                           required
+                           placeholder="Menunggu kartu...">
+                    <small class="text-muted">Tempelkan kartu ke alat</small>
+                </div>
+
+                <div class="d-flex justify-content-between">
+
+                    <a href="/siswa" class="btn btn-secondary">
+                        Kembali
+                    </a>
+
+                    <button id="btnSimpan" class="btn btn-primary" disabled>
+                        Simpan
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =========================
+     SCRIPT (FIX TOTAL)
+========================= -->
+<script>
+
+// =======================
+// 🔥 RESET UID SAAT MASUK
+// =======================
+fetch("/reset_uid")
+
+// reset tampilan awal
+document.getElementById("uid").value = ""
+document.getElementById("btnSimpan").disabled = true
+
+document.getElementById("deviceStatus").innerHTML =
+    "● Menunggu kartu..."
+
+document.getElementById("deviceStatus").classList.remove("text-primary")
+document.getElementById("deviceStatus").classList.add("text-success")
+
+
+// =======================
+// AMBIL UID
+// =======================
+function ambilUID(){
+
+    fetch("/get_uid")
+    .then(res => res.json())
+    .then(data => {
+
+        if(data.uid){
+
+            document.getElementById("uid").value = data.uid
+
+            // update status
+            document.getElementById("deviceStatus").innerHTML =
+                "● Kartu terdeteksi ✔"
+
+            document.getElementById("deviceStatus").classList.remove("text-success")
+            document.getElementById("deviceStatus").classList.add("text-primary")
+
+            // aktifkan tombol
+            document.getElementById("btnSimpan").disabled = false
+        }
+
+    })
+
+}
+
+// polling
+setInterval(ambilUID, 1000)
+
+
+// =======================
+// AUTO HIDE FLASH
+// =======================
+setTimeout(() => {
+    let flash = document.getElementById("flashMessage")
+    if (flash) flash.style.display = "none"
+}, 6000)
+
+</script>
+
+{% endblock %}

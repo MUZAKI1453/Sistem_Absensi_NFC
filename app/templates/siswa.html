@@ -1,0 +1,260 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Data Siswa{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <!-- FLASH MESSAGE (HANYA SUCCESS GLOBAL) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div id="flashMessage">
+        {% for category, message in messages %}
+            {% if category == "success" or category == "danger" %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <h4 class="mb-0">Data Siswa</h4>
+
+        <div class="d-flex gap-2">
+
+            <!-- SEARCH -->
+            <button class="btn btn-outline-secondary btn-sm"
+                data-bs-toggle="modal"
+                data-bs-target="#searchModal">
+                Search
+            </button>
+
+            <!-- TAMBAH -->
+            <a href="/register" class="btn btn-primary btn-sm">
+                + Tambah Siswa
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- TABLE -->
+    <div class="card shadow-sm">
+
+        <div class="table-responsive">
+
+            <table class="table table-hover table-bordered align-middle text-center mb-0" id="siswaTable">
+
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width:80px;">ID</th>
+                        <th>Nama</th>
+                        <th style="width:150px;">NIS</th>
+                        <th style="width:150px;">Kelas</th>
+                        <th style="width:250px;">UID</th>
+                        <th style="width:170px;">Aksi</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% if siswa|length == 0 %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            Data siswa belum tersedia
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    {% for s in siswa %}
+
+                    <tr>
+
+                        <td>{{ s[0] }}</td>
+
+                        <td class="text-start ps-3">
+                            {{ s[1] }}
+                        </td>
+
+                        <td>
+                            <span class="badge bg-dark">
+                                {{ s[2] }}
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="badge bg-primary">
+                                {{ s[4] if s[4] else '-' }}
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="badge bg-secondary">
+                                {{ s[3] }}
+                            </span>
+                        </td>
+
+                        <td>
+
+                            <div class="d-flex justify-content-center gap-2">
+
+                                <!-- EDIT -->
+                                <button
+                                    class="btn btn-warning btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editModal{{ s[0] }}">
+                                    Edit
+                                </button>
+
+                                <!-- DELETE -->
+                                <a
+                                    href="/delete_siswa/{{ s[0] }}"
+                                    class="btn btn-danger btn-sm"
+                                    onclick="return confirm('Hapus siswa ini?')">
+                                    Delete
+                                </a>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    <!-- MODAL EDIT (FIXED) -->
+                    <div class="modal fade" id="editModal{{ s[0] }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+
+                                <form method="POST" action="/edit_siswa/{{ s[0] }}">
+
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Edit Data Siswa</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+
+                                    <div class="modal-body">
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Nama Siswa</label>
+                                            <input type="text" name="nama" class="form-control" value="{{ s[1] }}" required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">NIS</label>
+                                            <input type="text" name="nis" class="form-control" value="{{ s[2] }}" required>
+                                        </div>
+
+                                        <!-- ✅ FIX: dropdown kelas -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Kelas</label>
+                                            <select name="kelas_id" class="form-control" required>
+                                                {% for k in kelas_list %}
+                                                <option value="{{ k.id }}"
+                                                    {% if k.nama_kelas == s[4] %}selected{% endif %}>
+                                                    {{ k.nama_kelas }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">UID Kartu</label>
+                                            <input type="text" class="form-control" value="{{ s[3] }}" disabled>
+                                        </div>
+
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                            Batal
+                                        </button>
+                                        <button type="submit" class="btn btn-success">
+                                            Update
+                                        </button>
+                                    </div>
+
+                                </form>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- MODAL SEARCH -->
+<div class="modal fade" id="searchModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Cari Siswa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <input
+                    type="text"
+                    id="search"
+                    class="form-control"
+                    placeholder="Cari ID, nama, NIS, kelas, atau UID...">
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="resetSearch()">Reset</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPT -->
+<script>
+
+function searchTable(){
+    let input = document.getElementById("search").value.toLowerCase()
+    let rows = document.querySelectorAll("#siswaTable tbody tr")
+
+    rows.forEach(row => {
+        let cols = row.getElementsByTagName("td")
+
+        if(cols.length > 0){
+            let text = row.innerText.toLowerCase()
+            row.style.display = text.includes(input) ? "" : "none"
+        }
+    })
+}
+
+document.getElementById("search").addEventListener("keyup", searchTable)
+
+function resetSearch(){
+    document.getElementById("search").value = ""
+    document.querySelectorAll("#siswaTable tbody tr").forEach(row => {
+        row.style.display = ""
+    })
+}
+
+setTimeout(() => {
+    let flash = document.getElementById("flashMessage")
+    if (flash) flash.style.display = "none"
+}, 6000)
+
+</script>
+
+{% endblock %}

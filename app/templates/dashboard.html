@@ -1,0 +1,137 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<h4 class="mb-4">Dashboard</h4>
+
+<div class="row g-3">
+
+    <!-- KELAS -->
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-building mb-2" style="font-size: 1.6rem;"></i>
+                <div class="text-muted small">Kelas</div>
+                <h4 class="mb-0">{{ total_kelas }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- SISWA -->
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-people mb-2" style="font-size: 1.6rem;"></i>
+                <div class="text-muted small">Siswa</div>
+                <h4 class="mb-0">{{ total_siswa }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- HADIR -->
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-check-circle text-success mb-2" style="font-size: 1.6rem;"></i>
+                <div class="text-muted small">Hadir</div>
+                <h4 class="mb-0">{{ hadir }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- SAKIT -->
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-heart-pulse text-warning mb-2" style="font-size: 1.6rem;"></i>
+                <div class="text-muted small">Sakit</div>
+                <h4 class="mb-0">{{ sakit }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- IZIN -->
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-envelope text-primary mb-2" style="font-size: 1.6rem;"></i>
+                <div class="text-muted small">Izin</div>
+                <h4 class="mb-0">{{ izin }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- ALFA -->
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-x-circle text-danger mb-2" style="font-size: 1.6rem;"></i>
+                <div class="text-muted small">Alfa</div>
+                <h4 class="mb-0">{{ alfa }}</h4>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<hr>
+
+<!-- CHART -->
+<div class="card shadow-sm border-0 mt-3">
+    <div class="card-body text-center">
+
+        <h6 class="mb-3">Statistik Absensi</h6>
+
+        <!-- 🔥 BATASI UKURAN -->
+        <div style="max-width:300px; margin:auto;">
+            <canvas id="chartAbsensi"></canvas>
+        </div>
+
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+const ctx = document.getElementById('chartAbsensi');
+
+new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Hadir', 'Sakit', 'Izin', 'Alfa'],
+        datasets: [{
+            data: [{{ hadir }}, {{ sakit }}, {{ izin }}, {{ alfa }}],
+            backgroundColor: [
+                '#198754',
+                '#ffc107',
+                '#0d6efd',
+                '#dc3545'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+
+        cutout: '70%', // 🔥 donut lebih tipis & elegan
+
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    boxWidth: 12,
+                    padding: 15
+                }
+            }
+        }
+    }
+});
+
+</script>
+
+{% endblock %}

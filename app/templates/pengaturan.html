@@ -1,0 +1,70 @@
+{% extends "layouts/base.html" %}
+{% block title %}Pengaturan Waktu{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h4 class="mb-3">Pengaturan Waktu Absensi</h4>
+
+    <!-- FLASH -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div id="flashMessage">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show">
+            {{ message }}
+            <button class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <div class="card shadow-sm">
+
+        <div class="card-body">
+
+            <form method="POST">
+
+                <!-- JAM MASUK -->
+                <div class="mb-3">
+                    <label class="form-label">Jam Masuk</label>
+                    <input type="time" name="jam_masuk" class="form-control"
+                        value="{{ data.jam_masuk if data else '' }}" required>
+                </div>
+
+                <!-- BATAS TELAT -->
+                <div class="mb-3">
+                    <label class="form-label">Batas Terlambat</label>
+                    <input type="time" name="batas_telat" class="form-control"
+                        value="{{ data.batas_telat if data else '' }}" required>
+                </div>
+
+                <!-- JAM PULANG -->
+                <div class="mb-3">
+                    <label class="form-label">Jam Pulang</label>
+                    <input type="time" name="jam_pulang" class="form-control"
+                        value="{{ data.jam_pulang if data else '' }}" required>
+                </div>
+
+                <button class="btn btn-primary">
+                    Simpan Pengaturan
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+setTimeout(() => {
+    let flash = document.getElementById("flashMessage")
+    if (flash) flash.style.display = "none"
+}, 6000)
+</script>
+
+{% endblock %}

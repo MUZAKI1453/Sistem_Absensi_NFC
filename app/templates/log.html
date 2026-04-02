@@ -1,0 +1,224 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Log Absensi{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Log Absensi</h4>
+
+        <div class="d-flex gap-2">
+            <!-- BUTTON FILTER -->
+            <button class="btn btn-outline-primary btn-sm"
+                data-bs-toggle="modal"
+                data-bs-target="#filterModal">
+                Filter / Search
+            </button>
+
+            <a href="/log" class="btn btn-secondary btn-sm">
+                Reset
+            </a>
+        </div>
+    </div>
+
+    <!-- FLASH -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div id="flashMessage">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show">
+            {{ message }}
+            <button class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- TABLE -->
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+
+            <table class="table table-bordered table-hover align-middle text-center mb-0">
+
+                <thead class="table-dark">
+                    <tr>
+                        <th>No</th>
+                        <th>Nama</th>
+                        <th>NIS</th>
+                        <th>Kelas</th>
+                        <th>Status</th>
+                        <th>Waktu</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% if log|length == 0 %}
+                    <tr>
+                        <td colspan="7" class="text-muted py-4">
+                            Data tidak ditemukan
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    {% for d in log %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+
+                        <td class="text-start ps-3">
+                            {{ d[1] }}
+                        </td>
+
+                        <td>{{ d[2] }}</td>
+
+                        <td>
+                            <span class="badge bg-primary">
+                                {{ d[3] or '-' }}
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="badge
+                                {% if d[4]=='hadir' %}bg-success
+                                {% elif d[4]=='sakit' %}bg-warning text-dark
+                                {% elif d[4]=='izin' %}bg-info text-dark
+                                {% else %}bg-danger{% endif %}">
+                                {{ d[4] }}
+                            </span>
+                        </td>
+
+                        <td>{{ d[5] }}</td>
+
+                        <td>
+                            <button class="btn btn-warning btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#edit{{ d[0] }}">
+                                Edit
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- MODAL EDIT -->
+                    <div class="modal fade" id="edit{{ d[0] }}">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+
+                                <form method="POST" action="/update_absen/{{ d[0] }}">
+
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Edit Status</h5>
+                                        <button class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+
+                                    <div class="modal-body">
+                                        <select name="status" class="form-control">
+                                            <option value="hadir">Hadir</option>
+                                            <option value="sakit">Sakit</option>
+                                            <option value="izin">Izin</option>
+                                            <option value="alfa">Alfa</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                        <button class="btn btn-success">Update</button>
+                                    </div>
+
+                                </form>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- =========================
+     MODAL FILTER / SEARCH
+========================= -->
+<div class="modal fade" id="filterModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <form method="GET" action="/log">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Filter Data Absensi</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <!-- TANGGAL -->
+                    <div class="mb-2">
+                        <label>Tanggal</label>
+                        <input type="date" name="tanggal" class="form-control" value="{{ tanggal }}">
+                    </div>
+
+                    <!-- BULAN -->
+                    <div class="mb-2">
+                        <label>Bulan</label>
+                        <select name="bulan" class="form-control">
+                            <option value="">Semua</option>
+                            {% for i in range(1,13) %}
+                            <option value="{{ i }}"
+                                {% if bulan == i|string %}selected{% endif %}>
+                                {{ i }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- TAHUN -->
+                    <div class="mb-2">
+                        <label>Tahun</label>
+                        <input type="number" name="tahun" class="form-control" value="{{ tahun }}">
+                    </div>
+
+                    <!-- STATUS -->
+                    <div class="mb-2">
+                        <label>Status</label>
+                        <select name="status" class="form-control">
+                            <option value="">Semua</option>
+                            <option value="hadir" {% if status=='hadir' %}selected{% endif %}>Hadir</option>
+                            <option value="sakit" {% if status=='sakit' %}selected{% endif %}>Sakit</option>
+                            <option value="izin" {% if status=='izin' %}selected{% endif %}>Izin</option>
+                            <option value="alfa" {% if status=='alfa' %}selected{% endif %}>Alfa</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button class="btn btn-primary">Terapkan</button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<!-- AUTO HIDE FLASH -->
+<script>
+setTimeout(() => {
+    let flash = document.getElementById("flashMessage")
+    if (flash) flash.style.display = "none"
+}, 6000)
+</script>
+
+{% endblock %}
