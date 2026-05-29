@@ -75,11 +75,29 @@ def delete_kelas(id):
 
     conn = get_db()
 
-    conn.execute("DELETE FROM kelas WHERE id=?", (id,))
-    conn.commit()
-    conn.close()
+    try:
+        # CEK APAKAH MASIH ADA SISWA
+        siswa = conn.execute("""
+            SELECT COUNT(*) as total 
+            FROM siswa 
+            WHERE kelas_id = ?
+        """, (id,)).fetchone()
 
-    flash("Kelas berhasil dihapus", "danger")
+        if siswa["total"] > 0:
+            conn.close()
+            flash("Kelas tidak bisa dihapus karena masih ada data siswa!", "warning")
+            return redirect("/kelas")
+
+        # AMAN DIHAPUS
+        conn.execute("DELETE FROM kelas WHERE id=?", (id,))
+        conn.commit()
+        conn.close()
+
+        flash("Kelas berhasil dihapus", "danger")
+
+    except Exception as e:
+        print("ERROR DELETE KELAS:", e)
+        flash("Terjadi kesalahan saat menghapus kelas", "danger")
 
     return redirect("/kelas")
 

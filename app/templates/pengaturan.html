@@ -7,7 +7,7 @@
 
     <h4 class="mb-3">Pengaturan Waktu Absensi</h4>
 
-    <!-- FLASH -->
+    <!-- FLASH MESSAGES -->
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     <div id="flashMessage">
@@ -22,44 +22,66 @@
     {% endwith %}
 
     <div class="card shadow-sm">
-
         <div class="card-body">
 
             <form method="POST">
 
                 <!-- JAM MASUK -->
                 <div class="mb-3">
-                    <label class="form-label">Jam Masuk</label>
-                    <input type="time" name="jam_masuk" class="form-control"
-                        value="{{ data.jam_masuk if data else '' }}" required>
+                    <label class="form-label">Jam Masuk <span class="text-danger">*</span></label>
+                    <input type="time"
+                           name="jam_masuk"
+                           class="form-control"
+                           value="{{ data.jam_masuk | default('') }}"
+                           required>
+                </div>
+
+                <!-- JAM MASUK AKHIR (Baru) -->
+                <div class="mb-3">
+                    <label class="form-label">Jam Masuk Akhir <span class="text-danger">*</span></label>
+                    <small class="text-muted d-block mb-1">(Batas akhir scan masuk tanpa telat)</small>
+                    <input type="time"
+                           name="jam_masuk_akhir"
+                           class="form-control"
+                           value="{{ data.jam_masuk_akhir | default('') }}"
+                           required>
                 </div>
 
                 <!-- BATAS TELAT -->
                 <div class="mb-3">
-                    <label class="form-label">Batas Terlambat</label>
-                    <input type="time" name="batas_telat" class="form-control"
-                        value="{{ data.batas_telat if data else '' }}" required>
+                    <label class="form-label">Batas Keterlambatan <span class="text-danger">*</span></label>
+                    <small class="text-muted d-block mb-1">(Setelah jam ini dihitung telat)</small>
+                    <input type="time"
+                           name="batas_telat"
+                           class="form-control"
+                           value="{{ data.batas_telat | default('') }}"
+                           required>
                 </div>
 
                 <!-- JAM PULANG -->
                 <div class="mb-3">
-                    <label class="form-label">Jam Pulang</label>
-                    <input type="time" name="jam_pulang" class="form-control"
-                        value="{{ data.jam_pulang if data else '' }}" required>
+                    <label class="form-label">Jam Pulang <span class="text-danger">*</span></label>
+                    <input type="time"
+                           name="jam_pulang"
+                           class="form-control"
+                           value="{{ data.jam_pulang | default('') }}"
+                           required>
                 </div>
 
-                <button class="btn btn-primary">
-                    Simpan Pengaturan
-                </button>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-save"></i> Simpan Pengaturan
+                    </button>
+                </div>
 
             </form>
 
         </div>
-
     </div>
 
 </div>
 
+<!-- AUTO HIDE FLASH -->
 <script>
 setTimeout(() => {
     let flash = document.getElementById("flashMessage")

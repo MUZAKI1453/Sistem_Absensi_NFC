@@ -8,47 +8,22 @@
 
     <h4 class="mb-3">Registrasi Kartu NFC</h4>
 
-    <!-- =========================
-         INSTRUKSI REGISTRASI
-    ========================= -->
-    <div class="card border-0 shadow-sm mb-3" style="background:#f8fafc;">
-
+    <!-- Instruksi -->
+    <div class="card border-0 shadow-sm mb-4" style="background:#f8fafc;">
         <div class="card-body">
-
             <div class="d-flex align-items-start">
-
-                <div class="me-3 fs-3">
-                    📡
-                </div>
-
+                <div class="me-3 fs-3">📡</div>
                 <div>
-
-                    <h6 class="mb-2 fw-bold">
-                        Instruksi Registrasi Kartu
-                    </h6>
-
-                    <ol class="mb-2 ps-3 small text-muted">
+                    <h6 class="mb-2 fw-bold">Cara Registrasi Kartu</h6>
+                    <ol class="ps-3 small text-muted mb-0">
                         <li>Tekan tombol <b>REGISTER</b> pada perangkat absensi</li>
-                        <li>Tempelkan kartu NFC ke alat hingga terbaca</li>
-                        <li>Pastikan UID muncul otomatis di kolom</li>
-                        <li>Isi data siswa lalu klik <b>Simpan</b></li>
+                        <li>Tempelkan kartu NFC ke reader</li>
+                        <li>UID akan muncul otomatis di kolom bawah</li>
+                        <li>Isi data siswa lalu klik <b>Simpan Kartu</b></li>
                     </ol>
-
-                    <span class="badge bg-dark">
-                        Mode perangkat harus: REGISTER
-                    </span>
-
-                    <!-- STATUS DEVICE -->
-                    <div class="mt-2 small text-success" id="deviceStatus">
-                        ● Menunggu kartu...
-                    </div>
-
                 </div>
-
             </div>
-
         </div>
-
     </div>
 
     <!-- FLASH -->
@@ -65,25 +40,24 @@
     {% endif %}
     {% endwith %}
 
-    <!-- FORM -->
+    <!-- FORM REGISTRASI -->
     <div class="card shadow-sm">
-
         <div class="card-body">
 
-            <form method="POST">
+            <form method="POST" id="registerForm">
 
                 <div class="mb-3">
-                    <label class="form-label">Nama Siswa</label>
+                    <label class="form-label">Nama Siswa <span class="text-danger">*</span></label>
                     <input type="text" name="nama" class="form-control" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">NIS</label>
+                    <label class="form-label">NIS <span class="text-danger">*</span></label>
                     <input type="text" name="nis" class="form-control" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Kelas</label>
+                    <label class="form-label">Kelas <span class="text-danger">*</span></label>
                     <select name="kelas_id" class="form-control" required>
                         <option value="">-- Pilih Kelas --</option>
                         {% for k in kelas %}
@@ -92,99 +66,81 @@
                     </select>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">UID Kartu</label>
+                <div class="mb-4">
+                    <label class="form-label">UID Kartu <span class="text-danger">*</span></label>
                     <input type="text"
-                           id="uid"
+                           id="uidInput"
                            name="uid"
-                           class="form-control"
+                           class="form-control bg-light"
                            readonly
                            required
-                           placeholder="Menunggu kartu...">
-                    <small class="text-muted">Tempelkan kartu ke alat</small>
+                           placeholder="Tempelkan kartu ke perangkat...">
+                    <div class="mt-2 small" id="statusText">
+                        ● Menunggu kartu dari perangkat...
+                    </div>
                 </div>
 
                 <div class="d-flex justify-content-between">
-
-                    <a href="/siswa" class="btn btn-secondary">
-                        Kembali
-                    </a>
-
-                    <button id="btnSimpan" class="btn btn-primary" disabled>
-                        Simpan
+                    <a href="/siswa" class="btn btn-secondary">Kembali</a>
+                    <button type="submit" id="btnSimpan" class="btn btn-primary" disabled>
+                        Simpan Kartu
                     </button>
-
                 </div>
 
             </form>
 
         </div>
-
     </div>
 
 </div>
 
-<!-- =========================
-     SCRIPT (FIX TOTAL)
-========================= -->
 <script>
+// =======================
+// Variabel
+// =======================
+let pollingInterval = null;
 
 // =======================
-// 🔥 RESET UID SAAT MASUK
+// Ambil UID dari server
 // =======================
-fetch("/reset_uid")
-
-// reset tampilan awal
-document.getElementById("uid").value = ""
-document.getElementById("btnSimpan").disabled = true
-
-document.getElementById("deviceStatus").innerHTML =
-    "● Menunggu kartu..."
-
-document.getElementById("deviceStatus").classList.remove("text-primary")
-document.getElementById("deviceStatus").classList.add("text-success")
-
-
-// =======================
-// AMBIL UID
-// =======================
-function ambilUID(){
-
+function ambilUID() {
     fetch("/get_uid")
-    .then(res => res.json())
-    .then(data => {
-
-        if(data.uid){
-
-            document.getElementById("uid").value = data.uid
-
-            // update status
-            document.getElementById("deviceStatus").innerHTML =
-                "● Kartu terdeteksi ✔"
-
-            document.getElementById("deviceStatus").classList.remove("text-success")
-            document.getElementById("deviceStatus").classList.add("text-primary")
-
-            // aktifkan tombol
-            document.getElementById("btnSimpan").disabled = false
-        }
-
-    })
-
+        .then(res => res.json())
+        .then(data => {
+            if (data.uid && data.uid !== "") {
+                document.getElementById("uidInput").value = data.uid;
+                document.getElementById("statusText").innerHTML =
+                    "● Kartu terdeteksi ✓";
+                document.getElementById("statusText").className = "mt-2 small text-success";
+                document.getElementById("btnSimpan").disabled = false;
+            }
+        })
+        .catch(err => {
+            console.error("Gagal mengambil UID:", err);
+        });
 }
 
-// polling
-setInterval(ambilUID, 1000)
-
-
 // =======================
-// AUTO HIDE FLASH
+// Mulai polling saat halaman dimuat
 // =======================
-setTimeout(() => {
-    let flash = document.getElementById("flashMessage")
-    if (flash) flash.style.display = "none"
-}, 6000)
+window.onload = function() {
+    // Reset UID saat halaman register dibuka
+    fetch("/reset_uid");
 
+    // Mulai polling setiap 800ms (tidak terlalu cepat)
+    pollingInterval = setInterval(ambilUID, 800);
+
+    // Auto hide flash
+    setTimeout(() => {
+        let flash = document.getElementById("flashMessage");
+        if (flash) flash.style.display = "none";
+    }, 6000);
+};
+
+// Bersihkan interval saat halaman ditutup
+window.onbeforeunload = function() {
+    if (pollingInterval) clearInterval(pollingInterval);
+};
 </script>
 
 {% endblock %}

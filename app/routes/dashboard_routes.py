@@ -1,63 +1,78 @@
-from flask import Blueprint, render_template, session, redirect
+from flask import Blueprint, render_template, session, redirect, jsonify
 from datetime import date
-from app.models.database import get_db   # ← INI YANG PENTING DITAMBAHKAN
+from app.models.database import get_db
 
 dashboard = Blueprint("dashboard", __name__)
 
 
 @dashboard.route("/dashboard")
 def dashboard_page():
-
     if "login" not in session:
         return redirect("/")
 
-    conn = get_db()
-    c = conn.cursor()
+    today = date.today().isoformat()
 
-    today = date.today().isoformat()   # '2026-04-02'
+    with get_db() as conn:
+        c = conn.cursor()
 
-    # Total Kelas & Siswa (keseluruhan)
-    total_kelas = c.execute("SELECT COUNT(*) FROM kelas").fetchone()[0]
-    total_siswa = c.execute("SELECT COUNT(*) FROM siswa").fetchone()[0]
+        total_kelas = c.execute("SELECT COUNT(*) FROM kelas").fetchone()[0] or 0
+        total_siswa = c.execute("SELECT COUNT(*) FROM siswa").fetchone()[0] or 0
 
-    # ================= REKAP ABSENSI HARI INI SAJA =================
-    query_rekap = """
-        SELECT 
-            COUNT(CASE WHEN status = 'hadir' THEN 1 END) as hadir,
-            COUNT(CASE WHEN status = 'sakit' THEN 1 END) as sakit,
-            COUNT(CASE WHEN status = 'izin'  THEN 1 END) as izin,
-            COUNT(CASE WHEN status = 'alfa'  THEN 1 END) as alfa
-        FROM absensi 
-        WHERE DATE(waktu) = ?
-    """
-
-    rekap = c.execute(query_rekap, (today,)).fetchone()
-
-    hadir = rekap["hadir"] if rekap else 0
-    sakit = rekap["sakit"] if rekap else 0
-    izin  = rekap["izin"]  if rekap else 0
-    alfa  = rekap["alfa"]  if rekap else 0
-
-    # 10 Absensi Terbaru Hari Ini
-    data = c.execute("""
-        SELECT siswa.nama, absensi.status, absensi.waktu
-        FROM absensi
-        JOIN siswa ON siswa.id = absensi.siswa_id
-        WHERE DATE(absensi.waktu) = ?
-        ORDER BY absensi.waktu DESC
-        LIMIT 10
-    """, (today,)).fetchall()
-
-    conn.close()
+        rekap = c.execute("""
+            SELECT 
+                COUNT(CASE WHEN COALESCE(absensi.status, 'alfa') = 'hadir' THEN 1 END) as hadir,
+                COUNT(CASE WHEN COALESCE(absensi.status, 'alfa') = 'sakit' THEN 1 END) as sakit,
+                COUNT(CASE WHEN COALESCE(absensi.status, 'alfa') = 'izin'  THEN 1 END) as izin,
+                COUNT(CASE WHEN COALESCE(absensi.status, 'alfa') = 'alfa'  THEN 1 END) as alfa,
+                SUM(CASE WHEN absensi.menit_telat > 0 THEN 1 ELSE 0 END) as total_telat
+            FROM siswa
+            LEFT JOIN absensi ON siswa.id = absensi.siswa_id 
+                             AND absensi.tanggal = ?
+        """, (today,)).fetchone()
 
     return render_template(
         "dashboard.html",
         total_kelas=total_kelas,
         total_siswa=total_siswa,
-        hadir=hadir,
-        sakit=sakit,
-        izin=izin,
-        alfa=alfa,
-        data=data,
-        today=today
+        hadir=rekap["hadir"] or 0,
+        sakit=rekap["sakit"] or 0,
+        izin=rekap["izin"] or 0,
+        alfa=rekap["alfa"] or 0,
+        total_telat=rekap["total_telat"] or 0
     )
+
+
+# =========================
+# 🔥 ENDPOINT AJAX (RINGAN)
+# =========================
+@dashboard.route("/dashboard/data")
+def dashboard_data():
+    today = date.today().isoformat()
+
+    with get_db() as conn:
+        c = conn.cursor()
+
+        total_kelas = c.execute("SELECT COUNT(*) FROM kelas").fetchone()[0] or 0
+        total_siswa = c.execute("SELECT COUNT(*) FROM siswa").fetchone()[0] or 0
+
+        rekap = c.execute("""
+            SELECT 
+                COUNT(CASE WHEN COALESCE(absensi.status, 'alfa') = 'hadir' THEN 1 END) as hadir,
+                COUNT(CASE WHEN COALESCE(absensi.status, 'alfa') = 'sakit' THEN 1 END) as sakit,
+                COUNT(CASE WHEN COALESCE(absensi.status, 'alfa') = 'izin'  THEN 1 END) as izin,
+                COUNT(CASE WHEN COALESCE(absensi.status, 'alfa') = 'alfa'  THEN 1 END) as alfa,
+                SUM(CASE WHEN absensi.menit_telat > 0 THEN 1 ELSE 0 END) as total_telat
+            FROM siswa
+            LEFT JOIN absensi ON siswa.id = absensi.siswa_id 
+                             AND absensi.tanggal = ?
+        """, (today,)).fetchone()
+
+    return jsonify({
+        "kelas": total_kelas,
+        "siswa": total_siswa,
+        "hadir": rekap["hadir"] or 0,
+        "sakit": rekap["sakit"] or 0,
+        "izin": rekap["izin"] or 0,
+        "alfa": rekap["alfa"] or 0,
+        "telat": rekap["total_telat"] or 0
+    })

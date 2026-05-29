@@ -11,20 +11,25 @@
         <h4 class="mb-0">Log Absensi</h4>
 
         <div class="d-flex gap-2">
-            <!-- BUTTON FILTER -->
             <button class="btn btn-outline-primary btn-sm"
-                data-bs-toggle="modal"
-                data-bs-target="#filterModal">
-                Filter / Search
+                    data-bs-toggle="modal"
+                    data-bs-target="#filterModal">
+                <i class="bi bi-funnel"></i> Filter
+            </button>
+
+            <button class="btn btn-success btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#downloadModal">
+                <i class="bi bi-download"></i> Download Absensi
             </button>
 
             <a href="/log" class="btn btn-secondary btn-sm">
-                Reset
+                <i class="bi bi-arrow-clockwise"></i> Reset
             </a>
         </div>
     </div>
 
-    <!-- FLASH -->
+    <!-- FLASH MESSAGE -->
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     <div id="flashMessage">
@@ -41,157 +46,163 @@
     <!-- TABLE -->
     <div class="card shadow-sm">
         <div class="table-responsive">
-
             <table class="table table-bordered table-hover align-middle text-center mb-0">
-
                 <thead class="table-dark">
                     <tr>
                         <th>No</th>
-                        <th>Nama</th>
+                        <th>Nama Siswa</th>
                         <th>NIS</th>
                         <th>Kelas</th>
                         <th>Status</th>
-                        <th>Waktu</th>
+                        <th>Menit Telat</th>
+                        <th>Waktu Masuk</th>
+                        <th>Waktu Pulang</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
+                <tbody id="logTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
-                <tbody>
+<!-- ==================== MODAL DOWNLOAD ==================== -->
+<div class="modal fade" id="downloadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
 
-                    {% if log|length == 0 %}
-                    <tr>
-                        <td colspan="7" class="text-muted py-4">
-                            Data tidak ditemukan
-                        </td>
-                    </tr>
-                    {% endif %}
+            <div class="modal-header">
+                <h5 class="modal-title">Download Absensi</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
 
-                    {% for d in log %}
-                    <tr>
-                        <td>{{ loop.index }}</td>
+            <div class="modal-body">
 
-                        <td class="text-start ps-3">
-                            {{ d[1] }}
-                        </td>
+                <div class="mb-3">
+                    <label>Jenis Download</label>
+                    <select id="downloadTipe" class="form-select">
+                        <option value="harian">Harian</option>
+                        <option value="bulanan">Bulanan</option>
+                    </select>
+                </div>
 
-                        <td>{{ d[2] }}</td>
+                <!-- HARIAN -->
+                <div id="harianFields">
+                    <div class="mb-3">
+                        <label>Tanggal</label>
+                        <input type="date" id="downloadTanggal" class="form-control" value="{{ today }}">
+                    </div>
+                </div>
 
-                        <td>
-                            <span class="badge bg-primary">
-                                {{ d[3] or '-' }}
-                            </span>
-                        </td>
-
-                        <td>
-                            <span class="badge
-                                {% if d[4]=='hadir' %}bg-success
-                                {% elif d[4]=='sakit' %}bg-warning text-dark
-                                {% elif d[4]=='izin' %}bg-info text-dark
-                                {% else %}bg-danger{% endif %}">
-                                {{ d[4] }}
-                            </span>
-                        </td>
-
-                        <td>{{ d[5] }}</td>
-
-                        <td>
-                            <button class="btn btn-warning btn-sm"
-                                data-bs-toggle="modal"
-                                data-bs-target="#edit{{ d[0] }}">
-                                Edit
-                            </button>
-                        </td>
-                    </tr>
-
-                    <!-- MODAL EDIT -->
-                    <div class="modal fade" id="edit{{ d[0] }}">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-
-                                <form method="POST" action="/update_absen/{{ d[0] }}">
-
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Edit Status</h5>
-                                        <button class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body">
-                                        <select name="status" class="form-control">
-                                            <option value="hadir">Hadir</option>
-                                            <option value="sakit">Sakit</option>
-                                            <option value="izin">Izin</option>
-                                            <option value="alfa">Alfa</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="modal-footer">
-                                        <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                        <button class="btn btn-success">Update</button>
-                                    </div>
-
-                                </form>
-
-                            </div>
+                <!-- BULANAN -->
+                <div id="bulananFields" style="display:none;">
+                    <div class="row">
+                        <div class="col-6">
+                            <label>Bulan</label>
+                            <input type="number" id="downloadBulan" class="form-control"
+                                   value="{{ today[5:7] }}" min="1" max="12">
+                        </div>
+                        <div class="col-6">
+                            <label>Tahun</label>
+                            <input type="number" id="downloadTahun" class="form-control"
+                                   value="{{ today[:4] }}">
                         </div>
                     </div>
+                </div>
 
-                    {% endfor %}
+                <div class="mb-3 mt-3">
+                    <label>Kelas</label>
+                    <select id="downloadKelas" class="form-select">
+                        <option value="">Semua Kelas</option>
+                    </select>
+                </div>
 
-                </tbody>
+            </div>
 
-            </table>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button class="btn btn-success" onclick="startDownload()">
+                    <i class="bi bi-download"></i> Download Sekarang
+                </button>
+            </div>
 
         </div>
     </div>
-
 </div>
 
-<!-- =========================
-     MODAL FILTER / SEARCH
-========================= -->
-<div class="modal fade" id="filterModal">
+<!-- ==================== MODAL EDIT ==================== -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Status Kehadiran</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="siswaId">
+
+                <div class="mb-3">
+                    <label>Status Kehadiran</label>
+                    <select id="statusSelect" class="form-select">
+                        <option value="hadir">Hadir</option>
+                        <option value="sakit">Sakit</option>
+                        <option value="izin">Izin</option>
+                        <option value="alfa">Alfa</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button onclick="submitEditForm()" class="btn btn-primary">Simpan Perubahan</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ==================== MODAL FILTER ==================== -->
+<div class="modal fade" id="filterModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
 
             <form method="GET" action="/log">
 
                 <div class="modal-header">
-                    <h5 class="modal-title">Filter Data Absensi</h5>
-                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title">Filter Absensi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body">
 
                     <!-- TANGGAL -->
-                    <div class="mb-2">
+                    <div class="mb-3">
                         <label>Tanggal</label>
-                        <input type="date" name="tanggal" class="form-control" value="{{ tanggal }}">
+                        <input type="date" name="tanggal" class="form-control"
+                               value="{{ tanggal }}">
                     </div>
 
-                    <!-- BULAN -->
-                    <div class="mb-2">
-                        <label>Bulan</label>
-                        <select name="bulan" class="form-control">
-                            <option value="">Semua</option>
-                            {% for i in range(1,13) %}
-                            <option value="{{ i }}"
-                                {% if bulan == i|string %}selected{% endif %}>
-                                {{ i }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <!-- TAHUN -->
-                    <div class="mb-2">
-                        <label>Tahun</label>
-                        <input type="number" name="tahun" class="form-control" value="{{ tahun }}">
+                    <!-- BULAN & TAHUN -->
+                    <div class="row">
+                        <div class="col-6">
+                            <label>Bulan</label>
+                            <input type="number" name="bulan" class="form-control"
+                                   min="1" max="12" value="{{ bulan }}">
+                        </div>
+                        <div class="col-6">
+                            <label>Tahun</label>
+                            <input type="number" name="tahun" class="form-control"
+                                   value="{{ tahun }}">
+                        </div>
                     </div>
 
                     <!-- STATUS -->
-                    <div class="mb-2">
+                    <div class="mb-3 mt-3">
                         <label>Status</label>
-                        <select name="status" class="form-control">
+                        <select name="status" class="form-select">
                             <option value="">Semua</option>
                             <option value="hadir" {% if status=='hadir' %}selected{% endif %}>Hadir</option>
                             <option value="sakit" {% if status=='sakit' %}selected{% endif %}>Sakit</option>
@@ -204,7 +215,7 @@
 
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button class="btn btn-primary">Terapkan</button>
+                    <button type="submit" class="btn btn-primary">Terapkan Filter</button>
                 </div>
 
             </form>
@@ -213,12 +224,126 @@
     </div>
 </div>
 
-<!-- AUTO HIDE FLASH -->
 <script>
-setTimeout(() => {
-    let flash = document.getElementById("flashMessage")
-    if (flash) flash.style.display = "none"
-}, 6000)
+// LOAD KELAS
+document.getElementById('downloadModal').addEventListener('show.bs.modal', function () {
+    fetch('/log/kelas')
+        .then(res => res.json())
+        .then(data => {
+            const select = document.getElementById('downloadKelas');
+            select.innerHTML = '<option value="">Semua Kelas</option>';
+            data.forEach(k => {
+                select.innerHTML += `<option value="${k.id}">${k.nama_kelas}</option>`;
+            });
+        });
+});
+
+// TOGGLE
+document.getElementById('downloadTipe').addEventListener('change', function() {
+    document.getElementById('harianFields').style.display =
+        this.value === 'harian' ? 'block' : 'none';
+
+    document.getElementById('bulananFields').style.display =
+        this.value === 'bulanan' ? 'block' : 'block'; // 🔥 tetap tampil smooth
+});
+
+// DOWNLOAD
+function startDownload() {
+    const tipe = document.getElementById('downloadTipe').value;
+    let url = `/log/download?tipe=${tipe}`;
+
+    if (tipe === 'harian') {
+        const tgl = document.getElementById('downloadTanggal').value;
+        if (!tgl) return alert("Tanggal wajib diisi!");
+        url += `&tanggal=${tgl}`;
+    } else {
+        const bulan = document.getElementById('downloadBulan').value;
+        const tahun = document.getElementById('downloadTahun').value;
+        if (!bulan || !tahun) return alert("Bulan & Tahun wajib diisi!");
+        url += `&bulan=${bulan}&tahun=${tahun}`;
+    }
+
+    const kelas = document.getElementById('downloadKelas').value;
+    if (kelas) url += `&kelas_id=${kelas}`;
+
+    window.location.href = url;
+}
+
+// LOAD DATA TABLE (BALIKIN STYLE BADGE)
+function loadLogData() {
+    fetch('/log/data?tanggal={{ tanggal or today }}')
+        .then(res => res.json())
+        .then(data => {
+            let html = '';
+
+            data.forEach((row, index) => {
+
+                let statusHTML = '';
+
+                if (row.status === 'hadir') {
+                    statusHTML = row.menit_telat > 0
+                        ? `<span class="badge bg-warning text-dark">Hadir (Telat ${row.menit_telat} menit)</span>`
+                        : `<span class="badge bg-success">Hadir</span>`;
+                } else if (row.status === 'alfa') {
+                    statusHTML = `<span class="badge bg-danger">Alfa</span>`;
+                } else {
+                    statusHTML = `<span class="badge bg-info">${row.status.toUpperCase()}</span>`;
+                }
+
+                html += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${row.nama}</td>
+                    <td>${row.nis}</td>
+                    <td>${row.nama_kelas || '-'}</td>
+                    <td>${statusHTML}</td>
+                    <td>${row.menit_telat}</td>
+                    <td>${row.waktu_masuk ? row.waktu_masuk.substring(11,19) : '-'}</td>
+                    <td>${row.waktu_pulang ? row.waktu_pulang.substring(11,19) : '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary"
+                                onclick="showEditModal('${row.siswa_id}','${row.status}')">
+                            Edit
+                        </button>
+                    </td>
+                </tr>`;
+            });
+
+            document.getElementById('logTableBody').innerHTML = html;
+        });
+}
+
+// EDIT
+function showEditModal(id, status) {
+    document.getElementById('siswaId').value = id;
+    document.getElementById('statusSelect').value = status;
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
+function submitEditForm() {
+    const id = document.getElementById('siswaId').value;
+    const status = document.getElementById('statusSelect').value;
+
+    fetch(`/update_absen/${id}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `status=${status}`
+    }).then(() => {
+        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+        loadLogData();
+    });
+}
+
+// INIT
+document.addEventListener('DOMContentLoaded', () => {
+    loadLogData();
+    setInterval(loadLogData, 8000);
+
+    setTimeout(() => {
+        const flash = document.getElementById('flashMessage');
+        if (flash) flash.style.display = 'none';
+    }, 6000);
+});
 </script>
 
 {% endblock %}

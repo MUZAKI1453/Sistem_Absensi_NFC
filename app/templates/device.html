@@ -1,0 +1,59 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h4>Monitoring Device</h4>
+
+    <div class="card shadow-sm mt-3">
+        <div class="table-responsive">
+
+            <table class="table table-bordered text-center">
+
+                <thead class="table-dark">
+                    <tr>
+                        <th>NO</th>
+                        <th>MAC Address</th>
+                        <th>Last Seen</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for d in device %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ d.mac }}</td>
+                        <td>{{ d.last_seen }}</td>
+
+                        <td>
+                            {% if d.is_active == 1 %}
+                                <span class="badge bg-success">Aktif</span>
+                            {% else %}
+                                <span class="badge bg-danger">Nonaktif</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if d.is_active == 0 %}
+                                <a href="/device_on/{{ d.id }}" class="btn btn-success btn-sm">Aktifkan</a>
+                            {% else %}
+                                <a href="/device_off/{{ d.id }}" class="btn btn-danger btn-sm">Nonaktifkan</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

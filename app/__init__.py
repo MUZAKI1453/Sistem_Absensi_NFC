@@ -25,6 +25,7 @@ def create_app():
     from .routes.kelas_routes import kelas
     from .routes.log_routes import log
     from .routes.pengaturan_routes import pengaturan
+    from app.routes.device_routes import device
 
     app.register_blueprint(auth)
     app.register_blueprint(dashboard)
@@ -33,5 +34,6 @@ def create_app():
     app.register_blueprint(kelas)
     app.register_blueprint(log)
     app.register_blueprint(pengaturan)
+    app.register_blueprint(device)
 
     return app

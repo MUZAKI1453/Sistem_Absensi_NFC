@@ -4,8 +4,6 @@
 
 {% block content %}
 
-<h4 class="mb-4">Dashboard</h4>
-
 <div class="row g-3">
 
     <!-- KELAS -->
@@ -14,7 +12,7 @@
             <div class="card-body text-center">
                 <i class="bi bi-building mb-2" style="font-size: 1.6rem;"></i>
                 <div class="text-muted small">Kelas</div>
-                <h4 class="mb-0">{{ total_kelas }}</h4>
+                <h4 id="total_kelas">{{ total_kelas }}</h4>
             </div>
         </div>
     </div>
@@ -25,7 +23,7 @@
             <div class="card-body text-center">
                 <i class="bi bi-people mb-2" style="font-size: 1.6rem;"></i>
                 <div class="text-muted small">Siswa</div>
-                <h4 class="mb-0">{{ total_siswa }}</h4>
+                <h4 id="total_siswa">{{ total_siswa }}</h4>
             </div>
         </div>
     </div>
@@ -36,7 +34,8 @@
             <div class="card-body text-center">
                 <i class="bi bi-check-circle text-success mb-2" style="font-size: 1.6rem;"></i>
                 <div class="text-muted small">Hadir</div>
-                <h4 class="mb-0">{{ hadir }}</h4>
+                <h4 id="hadir">{{ hadir }}</h4>
+                <small id="telat_info"></small>
             </div>
         </div>
     </div>
@@ -47,7 +46,7 @@
             <div class="card-body text-center">
                 <i class="bi bi-heart-pulse text-warning mb-2" style="font-size: 1.6rem;"></i>
                 <div class="text-muted small">Sakit</div>
-                <h4 class="mb-0">{{ sakit }}</h4>
+                <h4 id="sakit">{{ sakit }}</h4>
             </div>
         </div>
     </div>
@@ -58,7 +57,7 @@
             <div class="card-body text-center">
                 <i class="bi bi-envelope text-primary mb-2" style="font-size: 1.6rem;"></i>
                 <div class="text-muted small">Izin</div>
-                <h4 class="mb-0">{{ izin }}</h4>
+                <h4 id="izin">{{ izin }}</h4>
             </div>
         </div>
     </div>
@@ -69,7 +68,7 @@
             <div class="card-body text-center">
                 <i class="bi bi-x-circle text-danger mb-2" style="font-size: 1.6rem;"></i>
                 <div class="text-muted small">Alfa</div>
-                <h4 class="mb-0">{{ alfa }}</h4>
+                <h4 id="alfa">{{ alfa }}</h4>
             </div>
         </div>
     </div>
@@ -81,14 +80,11 @@
 <!-- CHART -->
 <div class="card shadow-sm border-0 mt-3">
     <div class="card-body text-center">
+        <h6 class="mb-3">Statistik Absensi Hari Ini</h6>
 
-        <h6 class="mb-3">Statistik Absensi</h6>
-
-        <!-- 🔥 BATASI UKURAN -->
         <div style="max-width:300px; margin:auto;">
             <canvas id="chartAbsensi"></canvas>
         </div>
-
     </div>
 </div>
 
@@ -96,15 +92,22 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-
+// ==========================
+// INIT CHART
+// ==========================
 const ctx = document.getElementById('chartAbsensi');
 
-new Chart(ctx, {
+let chart = new Chart(ctx, {
     type: 'doughnut',
     data: {
         labels: ['Hadir', 'Sakit', 'Izin', 'Alfa'],
         datasets: [{
-            data: [{{ hadir }}, {{ sakit }}, {{ izin }}, {{ alfa }}],
+            data: [
+                {{ hadir | default(0) }},
+                {{ sakit | default(0) }},
+                {{ izin | default(0) }},
+                {{ alfa | default(0) }}
+            ],
             backgroundColor: [
                 '#198754',
                 '#ffc107',
@@ -117,21 +120,65 @@ new Chart(ctx, {
     options: {
         responsive: true,
         maintainAspectRatio: true,
-
-        cutout: '70%', // 🔥 donut lebih tipis & elegan
-
+        cutout: '70%',
         plugins: {
             legend: {
-                position: 'bottom',
-                labels: {
-                    boxWidth: 12,
-                    padding: 15
-                }
+                position: 'bottom'
             }
         }
     }
 });
 
+
+// ==========================
+// AJAX LOAD DATA
+// ==========================
+function loadDashboard() {
+    fetch('/dashboard/data')
+        .then(res => res.json())
+        .then(data => {
+
+            // update angka
+            document.getElementById('total_kelas').innerText = data.kelas;
+            document.getElementById('total_siswa').innerText = data.siswa;
+            document.getElementById('hadir').innerText = data.hadir;
+            document.getElementById('sakit').innerText = data.sakit;
+            document.getElementById('izin').innerText = data.izin;
+            document.getElementById('alfa').innerText = data.alfa;
+
+            // telat
+            const telatEl = document.getElementById('telat_info');
+            if (data.telat > 0) {
+                telatEl.innerText = `(Termasuk ${data.telat} telat)`;
+                telatEl.className = "text-warning";
+            } else {
+                telatEl.innerText = "";
+            }
+
+            // update chart
+            chart.data.datasets[0].data = [
+                data.hadir,
+                data.sakit,
+                data.izin,
+                data.alfa
+            ];
+            chart.update();
+
+        })
+        .catch(err => console.log("Error:", err));
+}
+
+
+// ==========================
+// AUTO REFRESH (RINGAN)
+// ==========================
+document.addEventListener("DOMContentLoaded", () => {
+
+    loadDashboard(); // load pertama
+
+    // 🔥 interval aman (tidak berat)
+    setInterval(loadDashboard, 10000); // 10 detik
+});
 </script>
 
 {% endblock %}
